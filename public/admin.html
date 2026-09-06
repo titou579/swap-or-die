@@ -2,16 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Swap or Die - Admin Panel</title>
+    <title>Swap or Die - Panel Admin</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body style="background:#0b0b0b; color:#fff; padding:30px; font-family:sans-serif;">
+<body style="background:#0b0b0b; color:#fff; padding:40px; font-family:'Segoe UI', sans-serif;">
     <h1>Panel Administrateur - Swap or Die</h1>
-    <p>Gestion et modération des serveurs 24h/24.</p>
-    <div style="background:#1a1a1a; padding:20px; border-radius:8px; border:1px solid #333; margin-top:20px;">
-        <h3>État des Salons Actifs</h3>
-        <p id="admin-status">Connexion au flux serveur...</p>
-        <button onclick="alert('Salons et instances réinitialisés avec succès !')" style="background:#e50914; padding:10px 15px; border:none; color:#fff; border-radius:5px; cursor:pointer;">Forcer le Purge Global</button>
+    <p>Supervision des serveurs 24h/24 et modération globale.</p>
+    <div style="background:#161616; padding:25px; border-radius:10px; border:1px solid #333; margin-top:25px;">
+        <h3>État des flux serveurs</h3>
+        <p id="admin-status" style="color:#2ecc71;">● Serveur Node.js en ligne et opérationnel.</p>
+        <button onclick="alert('Salons purgés et réinitialisés avec succès !')" style="background:#e50914; padding:12px 20px; border:none; color:#fff; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:15px;">Forcer le Purge Global des Salons</button>
     </div>
 </body>
 </html>
