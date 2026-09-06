@@ -35,7 +35,10 @@
             <h2 id="ee-title" style="color:#e50914;">Événement Secret</h2>
             <p id="ee-text" style="margin:15px 0;"></p>
             <div id="rickroll-container" style="display:none; margin-bottom:15px;">
-                <iframe width="100%" height="220" src="/rickroll" frameborder="0" allow="autoplay"></iframe>
+                <video id="rick-video" width="100%" height="220" controls>
+                    <source src="/rickroll" type="video/mp4">
+                    Ton navigateur ne supporte pas la vidéo.
+                </video>
             </div>
             <button onclick="closeEasterEgg()" style="width:100%; padding:10px; background:#e50914; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Reprendre</button>
         </div>
