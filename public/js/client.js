@@ -4,73 +4,67 @@ let currentRoom = '';
 socket.on('checkGuestStatus', (data) => {
     const timeLeftHours = Math.ceil((data.expiresAt - Date.now()) / (1000 * 60 * 60));
     if (timeLeftHours > 0) {
-        document.getElementById('guest-warning').style.display = 'block';
-        document.getElementById('guest-warning').innerText = `Attention : Compte invité. Suppression de vos données dans ${timeLeftHours}h sans inscription !`;
+        const warningEl = document.getElementById('guest-warning');
+        warningEl.style.display = 'block';
+        warningEl.innerText = `⚠️ Compte invité : Vos données seront supprimées dans ${timeLeftHours}h sans inscription !`;
     }
 });
 
-function joinGame(isPrivate) {
+function joinGame() {
     const username = document.getElementById('username-input').value.trim();
     const roomCode = document.getElementById('room-input').value.trim() || 'salon_1';
     if (!username) {
-        alert("Entre un pseudo valide !");
+        alert("Entre ton pseudo avant de lancer !");
         return;
     }
 
     currentRoom = roomCode;
     document.getElementById('auth-box').style.display = 'none';
-    document.getElementById('game-hud').style.display = 'flex';
+    document.getElementById('game-hud').style.display = 'block';
 
-    socket.emit('joinRoom', { roomCode, username, isPrivate });
+    socket.emit('joinRoom', { roomCode, username, isPrivate: false });
 }
 
 function openAccountModal() {
-    alert("Redirection sécurisée vers la création de compte (Google / Mail)...");
+    triggerEasterEgg(
+        "Connexion Sécurisée", 
+        "L'authentification Google et Mail est prête pour lier ton compte 24h/24 et conserver tes cosmétiques !"
+    );
 }
 
 socket.on('tickTimer', (data) => {
     document.getElementById('hud-timer').innerText = `Swap dans : ${data.timer}s`;
 });
 
-socket.on('updateGame', (roomData) => {
-    // Mise à jour de l'interface et des stats du joueur
+socket.on('updateGameState', (roomData) => {
     if (roomData.players[socket.id]) {
         const p = roomData.players[socket.id];
         document.getElementById('hud-hp').innerText = `PV : ${p.hp} / ${p.maxHp}`;
         document.getElementById('hud-totem').innerText = `Totems : ${p.totems}`;
+        document.getElementById('hud-weapon').innerText = `Arme : ${p.weapon}`;
     }
 });
 
-socket.on('playerDied', (data) => {
-    if (data.diedAlone) {
-        // Easter Egg ultime : Rickroll en cas de mort solitaire avant le 1er swap
-        triggerEasterEgg(
-            "Explosion Solitaire !", 
-            "Perdre tout seul avant même le premier échange de position... C'est une œuvre d'art. Apprécie la danse !", 
-            true
-        );
-    } else {
-        alert("Tu as été éliminé par un adversaire !");
-        location.reload();
-    }
+socket.on('chestOpened', (data) => {
+    alert(data.rewardMsg);
 });
 
-socket.on('globalSwapExecuted', (players) => {
-    console.log("Swap global effectué !", players);
+socket.on('globalSwapExecuted', (data) => {
+    triggerEasterEgg("⚡ ALerte SWAP GLOBAL", data.message);
 });
 
-// 10 Easter Eggs Originaux intégrés dynamiquement
-const easterEggsList = [
-    "1. La solitude suprême (Rickroll sur mort en solo)",
-    "2. Le Konami Code secret (Vitesse x2)",
-    "3. Le pixel invisible du bord de map",
-    "4. La malédiction des 42 défaites d'affilée",
-    "5. Le clic frénétique du logo rétro",
-    "6. Le piège de Schrödinger (S'auto-piéger)",
-    "7. L'erreur 404 de franchissement de texture",
-    "8. Le fantôme de minuit (Connexion à 03h00)",
-    "9. Le Totem Doré de survie à 1 PV",
-    "10. La déconnexion au millième de seconde"
+// --- LISTE DES 10 EASTER EGGS ORIGINAUX INTEGRABLES DANS LE GAMEPLAY ---
+const easterEggsDescriptions = [
+    "1. 🎭 La Solitude Suprême : Mourir seul avant le premier swap déclenche un Rickroll instantané.",
+    "2. ⚡ Le Konami Code : Taper la séquence secrète double ta vitesse de déplacement.",
+    "3. 🧱 Le Bug de la Matrice : Découvrir le pixel invisible au bout de la grande map cubique.",
+    "4. 🏆 La Malédiction du 42 : Cumuler 42 éliminations ratées sans une seule victoire.",
+    "5. 🎮 Le Clic Frénétique : Cliquer 10 fois sur le logo du menu principal réveille un son 8-bit.",
+    "6. 🌀 Le Piège de Schrödinger : S'auto-piéger lors d'une inversion de position chaotique.",
+    "7. 🚫 L'Erreur 404 : Essayer de traverser les limites physiques du relief souterrain.",
+    "8. 🌙 Le Fantôme de Minuit : Rejoindre une partie secrète exactement à 03h00 du matin.",
+    "9. ✨ Le Totem Doré : Survivre à un coup fatal avec exactement 1 point de vie restant.",
+    "10. 🚀 La Déconnexion Divine : Quitter le jeu au millième de seconde précis du swap global."
 ];
 
 function triggerEasterEgg(title, text, showRickroll = false) {
