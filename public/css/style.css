@@ -1,10 +1,12 @@
-body { margin: 0; overflow: hidden; background: #0b0b0b; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { margin: 0; overflow: hidden; background: #080808; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; }
-#auth-box { background: rgba(18, 18, 18, 0.95); padding: 40px; border-radius: 12px; pointer-events: auto; text-align: center; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.9); width: 320px; }
-input { width: 90%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; }
-button { width: 95%; padding: 12px; background: #e50914; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.2s; }
+#auth-box { background: rgba(15, 15, 15, 0.96); padding: 40px; border-radius: 12px; pointer-events: auto; text-align: center; border: 1px solid #2a2a2a; box-shadow: 0 15px 50px rgba(0,0,0,0.9); width: 340px; }
+input { width: 90%; padding: 12px; margin: 10px 0; background: #1f1f1f; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; }
+button { width: 95%; padding: 12px; background: #e50914; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
 button:hover { background: #b20710; }
 #game-hud { position: absolute; top: 20px; left: 20px; pointer-events: auto; display: flex; flex-direction: column; gap: 8px; }
-#hud-timer, #hud-hp, #hud-totem, #hud-controls-info { background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 6px; font-weight: bold; border-left: 4px solid #e50914; font-size: 14px; }
-#easter-egg-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.modal-card { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 2px solid #e50914; width: 450px; text-align: center; }
+.hud-card { background: rgba(12, 12, 12, 0.85); padding: 10px 18px; border-radius: 6px; font-weight: bold; border-left: 4px solid #e50914; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.7); font-size: 20px; pointer-events: none; user-select: none; }
+#hud-controls-info { background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #aaa; margin-top: 5px; }
+#easter-egg-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; justify-content: center; align-items: center; z-index: 9999; pointer-events: auto; }
+.modal-card { background: #161616; padding: 35px; border-radius: 12px; border: 2px solid #e50914; width: 460px; text-align: center; box-shadow: 0 10px 40px rgba(229,9,20,0.3); }
