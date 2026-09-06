@@ -16,22 +16,19 @@ io.on('connection', (socket) => {
     const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress;
 
     if (!guestIps[clientIp]) {
-        guestIps[clientIp] = {
-            createdAt: Date.now(),
-            expiresAt: Date.now() + (72 * 60 * 60 * 1000)
-        };
+        guestIps[clientIp] = { expiresAt: Date.now() + (72 * 60 * 60 * 1000) };
     }
     socket.emit('checkGuestStatus', { expiresAt: guestIps[clientIp].expiresAt });
 
-    socket.on('joinRoom', ({ roomCode, username, isPrivate }) => {
+    socket.on('joinRoom', ({ roomCode, username }) => {
         if (!rooms[roomCode]) {
             rooms[roomCode] = {
                 players: {},
                 chests: [
-                    { id: 1, x: 25, z: 25, type: 'totem' },
-                    { id: 2, x: -30, z: 40, type: 'weapon' },
-                    { id: 3, x: 0, z: -50, type: 'health' },
-                    { id: 4, x: 45, z: -20, type: 'trap' }
+                    { id: 1, x: 20, z: 20, opened: false },
+                    { id: 2, x: -25, z: 30, opened: false },
+                    { id: 3, x: 10, z: -35, opened: false },
+                    { id: 4, x: -30, z: -20, opened: false }
                 ],
                 timerSeconds: 90,
                 firstSwapDone: false
@@ -45,18 +42,15 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Spawn propre sans totem offert d'office (0 totems au départ)
         room.players[socket.id] = {
             id: socket.id,
-            username: username || "Explorateur_" + Math.floor(Math.random()*1000),
-            x: (Math.random() - 0.5) * 60,
-            y: 2,
-            z: (Math.random() - 0.5) * 60,
-            hp: 100,
-            maxHp: 100,
-            totems: 1,
+            username: username || "Joueur",
+            x: 0, y: 1.2, z: 0,
+            hp: 100, maxHp: 100,
+            totems: 0,
             weapon: 'Poings',
-            hasAgro: false,
-            pingQuality: Math.random()
+            hasAgro: false
         };
 
         socket.join(roomCode);
@@ -74,29 +68,47 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('openChest', ({ roomCode, chestId }) => {
+    socket.on('takeDamage', ({ roomCode, damage }) => {
+        const room = rooms[roomCode];
+        if (!room || !room.players[socket.id]) return;
+        const player = room.players[socket.id];
+        
+        player.hp -= damage;
+        if (player.hp <= 0) {
+            if (player.totems > 0) {
+                player.totems--;
+                player.hp = 50; // Utilisation automatique du totem
+                socket.emit('notification', "✨ Ton totem t'a sauvé la vie d'justesse !");
+            } else {
+                const diedAlone = !room.firstSwapDone && !player.hasAgro;
+                socket.emit('playerDied', { diedAlone });
+                player.hp = 100; // Reset
+                player.x = 0; player.z = 0;
+            }
+        }
+        io.to(roomCode).emit('updateGameState', room);
+    });
+
+    socket.on('tryOpenChest', ({ roomCode, chestId }) => {
         const room = rooms[roomCode];
         if (!room) return;
-        const chestIndex = room.chests.findIndex(c => c.id === chestId);
-        if (chestIndex !== -1) {
-            const chest = room.chests[chestIndex];
-            room.chests.splice(chestIndex, 1); // Disparition du coffre ouvert
-            
+        const chest = room.chests.find(c => c.id === chestId && !c.opened);
+        if (chest) {
+            chest.opened = true;
             const player = room.players[socket.id];
-            let rewardMsg = "";
-            if (chest.type === 'totem') {
+            
+            // Taux d'apparition des objets (Totem rare à 20% de chance)
+            const rand = Math.random();
+            if (rand < 0.20) {
                 player.totems++;
-                rewardMsg = "🎁 Tu as trouvé un Totem d'inversion rare !";
-            } else if (chest.type === 'weapon') {
-                player.weapon = 'Épée Cubique';
-                rewardMsg = "⚔️ Tu as trouvé une Épée (+ de dégâts) !";
-            } else if (chest.type === 'health') {
-                player.hp = Math.min(player.maxHp, player.hp + 50);
-                rewardMsg = "❤️ Bonus de soin récupéré (+50 PV) !";
+                socket.emit('notification', "🎉 Incroyable ! Tu as trouvé un Totem rare dans le coffre !");
+            } else if (rand < 0.60) {
+                player.weapon = 'Épée Légère';
+                socket.emit('notification', "⚔️ Tu as trouvé une arme de mêlée !");
             } else {
-                rewardMsg = "📦 Un kit de pièges tactiques récupéré !";
+                player.hp = Math.min(player.maxHp, player.hp + 40);
+                socket.emit('notification', "❤️ Tu as trouvé une potion de soin (+40 PV) !");
             }
-            socket.emit('chestOpened', { rewardMsg });
             io.to(roomCode).emit('updateGameState', room);
         }
     });
@@ -114,31 +126,17 @@ io.on('connection', (socket) => {
 function startRoomLoop(roomCode) {
     const room = rooms[roomCode];
     if (!room) return;
-
     setInterval(() => {
         if (!rooms[roomCode]) return;
         room.timerSeconds--;
-
         if (room.timerSeconds <= 0) {
             room.firstSwapDone = true;
-            triggerGlobalSwap(roomCode);
-            room.timerSeconds = Math.floor(Math.random() * 60) + 60;
+            io.to(roomCode).emit('globalSwapExecuted', { message: "⚡ SWAP GLOBAL ! Inversion des positions et des rôles !" });
+            room.timerSeconds = 90;
         }
-
         io.to(roomCode).emit('tickTimer', { timer: room.timerSeconds });
     }, 1000);
 }
 
-function triggerGlobalSwap(roomCode) {
-    const room = rooms[roomCode];
-    const pIds = Object.keys(room.players);
-    if (pIds.length < 2) return;
-
-    // Permutation des identités et positions simulées
-    io.to(roomCode).emit('globalSwapExecuted', { message: "⚡ SWAP GLOBAL ! Vos positions, skins et caméras viennent de s'inverser !" });
-}
-
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Swap or Die Server v3.0 actif sur le port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Serveur actif sur le port ${PORT}`));
