@@ -9,6 +9,11 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Route pour le fichier rickroll à la racine
+app.get('/rickroll', (req, res) => {
+    res.sendFile(path.join(__dirname, 'rickroll.html'));
+});
+
 const rooms = {};
 const guestIps = {};
 
@@ -42,7 +47,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Spawn propre sans totem offert d'office (0 totems au départ)
         room.players[socket.id] = {
             id: socket.id,
             username: username || "Joueur",
@@ -77,12 +81,12 @@ io.on('connection', (socket) => {
         if (player.hp <= 0) {
             if (player.totems > 0) {
                 player.totems--;
-                player.hp = 50; // Utilisation automatique du totem
+                player.hp = 50;
                 socket.emit('notification', "✨ Ton totem t'a sauvé la vie d'justesse !");
             } else {
                 const diedAlone = !room.firstSwapDone && !player.hasAgro;
                 socket.emit('playerDied', { diedAlone });
-                player.hp = 100; // Reset
+                player.hp = 100;
                 player.x = 0; player.z = 0;
             }
         }
@@ -97,7 +101,6 @@ io.on('connection', (socket) => {
             chest.opened = true;
             const player = room.players[socket.id];
             
-            // Taux d'apparition des objets (Totem rare à 20% de chance)
             const rand = Math.random();
             if (rand < 0.20) {
                 player.totems++;
