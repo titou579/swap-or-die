@@ -9,7 +9,6 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <!-- Menu Principal Visible au Démarrage -->
     <div id="menu-overlay">
         <div id="auth-box">
             <h1>SWAP OR DIE</h1>
@@ -22,24 +21,21 @@
         </div>
     </div>
 
-    <!-- HUD de Jeu -->
     <div id="game-hud" style="display: none;">
         <div class="hud-card" id="hud-timer">Swap dans : 90s</div>
         <div class="hud-card" id="hud-hp">PV : 100 / 100</div>
         <div class="hud-card" id="hud-totem">Totems : 0</div>
         <div class="hud-card" id="hud-weapon">Arme : Poings</div>
         <div id="crosshair">+</div>
-        <div id="interaction-prompt" style="display:none;">Appuie sur [E] pour ouvrir le coffre</div>
         <div id="hud-controls-info">ZQSD : Bouger | Souris : Caméra | Espace : Sauter | E : Coffre</div>
     </div>
 
-    <!-- Modale Easter Eggs & Rickroll -->
     <div id="easter-egg-modal" style="display:none;">
         <div class="modal-card">
             <h2 id="ee-title" style="color:#e50914;">Événement Secret</h2>
             <p id="ee-text" style="margin:15px 0;"></p>
             <div id="rickroll-container" style="display:none; margin-bottom:15px;">
-                <iframe width="100%" height="220" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" frameborder="0" allow="autoplay"></iframe>
+                <iframe width="100%" height="220" src="/rickroll" frameborder="0" allow="autoplay"></iframe>
             </div>
             <button onclick="closeEasterEgg()" style="width:100%; padding:10px; background:#e50914; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Reprendre</button>
         </div>
