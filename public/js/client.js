@@ -80,13 +80,28 @@ socket.on('globalSwapExecuted', (data) => {
     triggerEasterEgg("⚡ SWAP GLOBAL", data.message);
 });
 
-function triggerEasterEgg(title, text, showRickroll = false) {
+function triggerEasterEgg(title, text, showVideo = false) {
     document.getElementById('ee-title').innerText = title;
     document.getElementById('ee-text').innerText = text;
-    document.getElementById('rickroll-container').style.display = showRickroll ? 'block' : 'none';
+    
+    const videoContainer = document.getElementById('rickroll-container');
+    const videoElem = document.getElementById('rick-video');
+    
+    if (showVideo) {
+        videoContainer.style.display = 'block';
+        videoElem.currentTime = 0;
+        videoElem.play().catch(e => console.log("Lecture automatique bloquée par le navigateur :", e));
+    } else {
+        videoContainer.style.display = 'none';
+        videoElem.pause();
+    }
+    
     document.getElementById('easter-egg-modal').style.display = 'flex';
 }
 
 function closeEasterEgg() {
+    const videoElem = document.getElementById('rick-video');
+    videoElem.pause();
     document.getElementById('easter-egg-modal').style.display = 'none';
+    document.body.requestPointerLock();
 }
