@@ -33,7 +33,7 @@ for (let i = 0; i < 10; i++) {
     scene.add(block);
 }
 
-// --- COFFRES 3D (Variables Globales pour accès client.js) ---
+// --- COFFRES 3D GLOBAUX ---
 window.chestMeshes = [];
 const chestGeo = new THREE.BoxGeometry(1.5, 1.2, 1.5);
 const chestMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 });
@@ -79,7 +79,7 @@ window.playerGroup.add(rightLeg);
 window.playerGroup.position.set(0, 0, 0);
 scene.add(window.playerGroup);
 
-// --- CAMÉRA & CONTRÔLES SOURIS ---
+// --- CAMÉRA & CONTRÔLES ---
 let cameraAngleX = 0, cameraAngleY = 0;
 window.isGameStarted = false;
 
@@ -114,7 +114,7 @@ function animateGame() {
     requestAnimationFrame(animateGame);
     if (!window.isGameStarted) return;
 
-    // Calcul vectoriel pour des mouvements parfaitement alignés avec la vue caméra
+    // Vecteurs de mouvement parfaitement alignés sur la caméra
     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngleX);
     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngleX);
 
@@ -129,19 +129,16 @@ function animateGame() {
     let nextX = window.playerGroup.position.x + moveDir.x * speed;
     let nextZ = window.playerGroup.position.z + moveDir.z * speed;
 
-    // Limites de la map
     nextX = Math.max(-75, Math.min(75, nextX));
     nextZ = Math.max(-75, Math.min(75, nextZ));
 
     window.playerGroup.position.x = nextX;
     window.playerGroup.position.z = nextZ;
 
-    // Orientation du skin du joueur vers la direction du mouvement
     if (moveDir.lengthSq() > 0) {
         window.playerGroup.rotation.y = Math.atan2(moveDir.x, moveDir.z);
     }
 
-    // Gravité & Sol
     velocityY -= gravity;
     window.playerGroup.position.y += velocityY;
     if (window.playerGroup.position.y < 0) {
@@ -150,12 +147,10 @@ function animateGame() {
         if (keys.space) velocityY = 0.35;
     }
 
-    // Dégâts de lave
     if (window.playerGroup.position.x > 20 && window.playerGroup.position.x < 60 && window.playerGroup.position.z > 20 && window.playerGroup.position.z < 60) {
         if (window.sendDamage) window.sendDamage(2);
     }
 
-    // Positionnement Caméra TPS
     const dist = 7;
     camera.position.x = window.playerGroup.position.x + dist * Math.sin(cameraAngleX) * Math.cos(cameraAngleY);
     camera.position.y = window.playerGroup.position.y + 2 + dist * Math.sin(cameraAngleY);
