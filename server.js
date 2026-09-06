@@ -18,80 +18,86 @@ io.on('connection', (socket) => {
     if (!guestIps[clientIp]) {
         guestIps[clientIp] = {
             createdAt: Date.now(),
-            expiresAt: Date.now() + (72 * 60 * 60 * 1000),
-            warned: false
+            expiresAt: Date.now() + (72 * 60 * 60 * 1000)
         };
     }
-
     socket.emit('checkGuestStatus', { expiresAt: guestIps[clientIp].expiresAt });
 
     socket.on('joinRoom', ({ roomCode, username, isPrivate }) => {
         if (!rooms[roomCode]) {
             rooms[roomCode] = {
                 players: {},
-                chests: [],
-                gameStarted: false,
-                firstSwapDone: false,
-                timerSeconds: 90
+                chests: [
+                    { id: 1, x: 25, z: 25, type: 'totem' },
+                    { id: 2, x: -30, z: 40, type: 'weapon' },
+                    { id: 3, x: 0, z: -50, type: 'health' },
+                    { id: 4, x: 45, z: -20, type: 'trap' }
+                ],
+                timerSeconds: 90,
+                firstSwapDone: false
             };
             startRoomLoop(roomCode);
         }
 
         const room = rooms[roomCode];
-        const playerCount = Object.keys(room.players).length;
-        const maxPlayers = 15;
-        const minPlayers = isPrivate ? 3 : 5;
-
-        if (playerCount >= maxPlayers) {
+        if (Object.keys(room.players).length >= 15) {
             socket.emit('errorMsg', "Salon complet !");
             return;
         }
 
         room.players[socket.id] = {
             id: socket.id,
-            username: username || "Joueur_" + Math.floor(Math.random()*1000),
-            x: (Math.random() - 0.5) * 40,
-            y: 1,
-            z: (Math.random() - 0.5) * 40,
+            username: username || "Explorateur_" + Math.floor(Math.random()*1000),
+            x: (Math.random() - 0.5) * 60,
+            y: 2,
+            z: (Math.random() - 0.5) * 60,
             hp: 100,
             maxHp: 100,
-            totems: 0,
-            skin: 'cube_jungle',
+            totems: 1,
+            weapon: 'Poings',
             hasAgro: false,
-            firstSpawnTime: Date.now(),
-            pingQuality: Math.random() // Simulation de qualité de connexion
+            pingQuality: Math.random()
         };
 
         socket.join(roomCode);
-        io.to(roomCode).emit('updateGame', room);
+        io.to(roomCode).emit('updateGameState', room);
     });
 
-    socket.on('playerMove', (data) => {
+    socket.on('playerMove', (pos) => {
         for (let code in rooms) {
             if (rooms[code].players[socket.id]) {
-                rooms[code].players[socket.id].x = data.x;
-                rooms[code].players[socket.id].z = data.z;
+                rooms[code].players[socket.id].x = pos.x;
+                rooms[code].players[socket.id].y = pos.y;
+                rooms[code].players[socket.id].z = pos.z;
+                socket.to(code).emit('playerMoved', { id: socket.id, ...pos });
             }
         }
     });
 
-    socket.on('playerDamage', ({ roomCode, targetId, damage }) => {
+    socket.on('openChest', ({ roomCode, chestId }) => {
         const room = rooms[roomCode];
-        if (room && room.players[targetId]) {
-            room.players[targetId].hasAgro = true;
-            room.players[targetId].hp -= damage;
-            if (room.players[targetId].hp <= 0) {
-                if (room.players[targetId].totems > 0) {
-                    room.players[targetId].totems--;
-                    room.players[targetId].hp = 50; // Revive avec totem
-                } else {
-                    // Vérification de la mort solitaire avant premier swap pour Easter Egg Rickroll
-                    const diedAlone = !room.firstSwapDone && !room.players[targetId].hasAgro;
-                    io.to(targetId).emit('playerDied', { diedAlone });
-                    delete room.players[targetId];
-                }
+        if (!room) return;
+        const chestIndex = room.chests.findIndex(c => c.id === chestId);
+        if (chestIndex !== -1) {
+            const chest = room.chests[chestIndex];
+            room.chests.splice(chestIndex, 1); // Disparition du coffre ouvert
+            
+            const player = room.players[socket.id];
+            let rewardMsg = "";
+            if (chest.type === 'totem') {
+                player.totems++;
+                rewardMsg = "🎁 Tu as trouvé un Totem d'inversion rare !";
+            } else if (chest.type === 'weapon') {
+                player.weapon = 'Épée Cubique';
+                rewardMsg = "⚔️ Tu as trouvé une Épée (+ de dégâts) !";
+            } else if (chest.type === 'health') {
+                player.hp = Math.min(player.maxHp, player.hp + 50);
+                rewardMsg = "❤️ Bonus de soin récupéré (+50 PV) !";
+            } else {
+                rewardMsg = "📦 Un kit de pièges tactiques récupéré !";
             }
-            io.to(roomCode).emit('updateGame', room);
+            socket.emit('chestOpened', { rewardMsg });
+            io.to(roomCode).emit('updateGameState', room);
         }
     });
 
@@ -99,7 +105,7 @@ io.on('connection', (socket) => {
         for (let code in rooms) {
             if (rooms[code].players[socket.id]) {
                 delete rooms[code].players[socket.id];
-                io.to(code).emit('updateGame', rooms[code]);
+                io.to(code).emit('updateGameState', rooms[code]);
             }
         }
     });
@@ -116,7 +122,7 @@ function startRoomLoop(roomCode) {
         if (room.timerSeconds <= 0) {
             room.firstSwapDone = true;
             triggerGlobalSwap(roomCode);
-            room.timerSeconds = Math.floor(Math.random() * 60) + 60; // 60 à 120 sec
+            room.timerSeconds = Math.floor(Math.random() * 60) + 60;
         }
 
         io.to(roomCode).emit('tickTimer', { timer: room.timerSeconds });
@@ -128,26 +134,11 @@ function triggerGlobalSwap(roomCode) {
     const pIds = Object.keys(room.players);
     if (pIds.length < 2) return;
 
-    // Logique d'immunité au swap (50-75% pour les connexions instables / basées sur le ping)
-    const activePlayers = pIds.filter(id => {
-        const p = room.players[id];
-        const immunityChance = p.pingQuality > 0.5 ? 0.75 : 0.5;
-        return Math.random() > immunityChance;
-    });
-
-    if (activePlayers.length >= 2) {
-        // Permutation circulaire des identités (Skin, Caméra, Contrôles)
-        const firstSkin = room.players[activePlayers[0]].skin;
-        for (let i = 0; i < activePlayers.length - 1; i++) {
-            room.players[activePlayers[i]].skin = room.players[activePlayers[i+1]].skin;
-        }
-        room.players[activePlayers[activePlayers.length - 1]].skin = firstSkin;
-    }
-
-    io.to(roomCode).emit('globalSwapExecuted', room.players);
+    // Permutation des identités et positions simulées
+    io.to(roomCode).emit('globalSwapExecuted', { message: "⚡ SWAP GLOBAL ! Vos positions, skins et caméras viennent de s'inverser !" });
 }
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Serveur Swap or Die lancé sur le port ${PORT}`);
+    console.log(`Swap or Die Server v3.0 actif sur le port ${PORT}`);
 });
