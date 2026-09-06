@@ -21,7 +21,7 @@ function enterGame() {
     currentRoom = roomCode;
     document.getElementById('menu-overlay').style.display = 'none';
     document.getElementById('game-hud').style.display = 'block';
-    isGameStarted = true;
+    window.isGameStarted = true;
     document.body.requestPointerLock();
 
     socket.emit('joinRoom', { roomCode, username });
@@ -35,15 +35,16 @@ window.sendDamage = function(dmg) {
     socket.emit('takeDamage', { roomCode: currentRoom, damage: dmg });
 };
 
-// Interaction Coffre avec la touche [E]
+// Ouverture des coffres avec la touche [E]
 window.addEventListener('keydown', (e) => {
     if (e.key === 'e' || e.key === 'E') {
-        // Trouve le coffre le plus proche
-        if (typeof playerGroup !== 'undefined') {
-            chestMeshes.forEach(chest => {
-                const dist = playerGroup.position.distanceTo(chest.position);
-                if (dist < 3 && !chest.userData.opened) {
+        if (typeof window.playerGroup !== 'undefined' && typeof window.chestMeshes !== 'undefined') {
+            window.chestMeshes.forEach(chest => {
+                const dist = window.playerGroup.position.distanceTo(chest.position);
+                if (dist < 4 && !chest.userData.opened) {
                     socket.emit('tryOpenChest', { roomCode: currentRoom, chestId: chest.userData.id });
+                    chest.material.color.setHex(0x333333);
+                    chest.userData.opened = true;
                 }
             });
         }
