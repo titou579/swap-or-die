@@ -9,9 +9,9 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route pour le fichier rickroll à la racine
+// Route dédiée pour servir ton fichier rickroll.mp4 situé à la racine
 app.get('/rickroll', (req, res) => {
-    res.sendFile(path.join(__dirname, 'rickroll.html'));
+    res.sendFile(path.join(__dirname, 'rickroll.mp4'));
 });
 
 const rooms = {};
